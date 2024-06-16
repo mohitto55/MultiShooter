@@ -1,0 +1,1 @@
+UnrealEditor.exe %cd%\MultiShooter.uproject -Trace=CPU
