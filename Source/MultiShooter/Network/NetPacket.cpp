@@ -70,14 +70,30 @@ void NetPacket::PutVectorIntoBuffer(char*& buf, FVector value)
 	PutFloatIntoBuffer(buf, value.Z);
 }
 
-GetScorePacket::GetScorePacket(uint16 PlayerID, int32 Score) : NetPacket(PlayerID)
+void NetPacket::PutFStringIntoBuffer(char*& buf, FString value)
+{
+	wchar_t* ch = TCHAR_TO_WCHAR(*value);
+	int32 length = wcslen(ch);
+	
+	// C++에서 유니코드로 적용하려면 wchar_t 타입으로 사용해야한다.
+	// 그리고 바이트 크기를 맞추기 위해서 길이를 2배 늘려줘야한다.
+	length *= 2;
+	PutInt32IntoBuffer(buf, length);
+	std::memcpy(buf, ch, length);
+	buf += length;
+	_PacketSize += length;
+}
+
+GetScorePacket::GetScorePacket(uint16 PlayerID, FString UniqueID, int32 Score) : NetPacket(PlayerID)
 {
 	score = Score;
+	uniqueID = UniqueID;
 }
 
 char* GetScorePacket::GenerateTail(char* buf)
 {
 	PutUint32IntoBuffer(buf, score);
+	PutFStringIntoBuffer(buf, uniqueID);
 	return buf;
 }
 

@@ -18,18 +18,8 @@ UMyNetworkSubsystem::~UMyNetworkSubsystem()
 void UMyNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	// pool = new boost::asio::thread_pool(4); // 4 threads
-	// boost::asio::post(*pool, std::bind(&UMyNetworkSubsystem::StartConnect, this));
-	
-	//pool->join();
-	// SocketInstance = new ClientSocket();
-	// if(SocketInstance->IsConnected())
-	// {
-	// 	GetScorePacket* packet = new GetScorePacket(1,10);
-	// 	packet->_PacketID = PacketID::S_GETSCORE;
-	// 	SendPacket(packet);
-	// 	delete packet;
-	// }
+	 pool = new boost::asio::thread_pool(4); // 4 threads
+	 boost::asio::post(*pool, std::bind(&UMyNetworkSubsystem::StartConnect, this));
 }
 
 
@@ -113,14 +103,6 @@ void UMyNetworkSubsystem::SendPacket(NetPacket* packet)
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString(readableStr.c_str()));
 	client->Send(buffer, packet->_PacketSize);
 	delete[] buffer;
-	
-	// wchar_t* filename = "Download2.png";
-	// WideCharToMultiByte(CP_ACP, 0, filename, wcslen(filename) * 2,
-	// 	buf, BUFSIZE, NULL, NULL);
-	// // 파일 이름 길이
-	// int len = strlen(buf);  // 파일 이름 길이 전송
-	// ServerSocket->send(boost::asio::buffer(buf, len));
-	
 }
 
 std::string UMyNetworkSubsystem::BufferToString(const char* buf, size_t length) {

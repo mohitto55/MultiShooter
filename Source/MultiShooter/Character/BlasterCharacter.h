@@ -72,6 +72,15 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	class AWeapon* OverlappingWeapon;
 	
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerName)
+	FString PlayerName;
+
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	TObjectPtr<class UWidgetComponent> DisplayWidgetComponent;
+
+	UPROPERTY(EditAnywhere, Category = Widget)
+	TObjectPtr<UUserWidget> TextWidget;
+	
 	void ShoulderMove(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Equip();
@@ -89,7 +98,8 @@ private:
 	void PlayHitReactMontage();
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
-
+	UFUNCTION()
+	void OnRep_PlayerName();
 	UPROPERTY(VisibleAnywhere)
 	class UCombatComponent* Combat;
 
@@ -112,7 +122,10 @@ private:
 	
 	class ABlasterPlayerController* BlasterPlayerController;
 
-	void GetStaemUserID();
+	int32 GetSteamUserID();
+	FString GetSteamUserName();
+	void InitDisplayText();
+	void SetDisplayText(const FString& Str);
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -120,4 +133,5 @@ public:
 	class AController* GetBlasterController();
 	FORCEINLINE float GetAO_Yaw() const {return AO_Yaw;}
 	FORCEINLINE float GetAO_Pitch() const {return AO_Pitch;}
+	virtual void PossessedBy(AController* NewController) override;
 };

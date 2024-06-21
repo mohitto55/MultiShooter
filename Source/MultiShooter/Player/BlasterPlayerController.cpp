@@ -7,9 +7,12 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameModeBase.h"
+#include "GameFramework/PlayerState.h"
 #include "HUD/BlasterHUD.h"
 #include "HUD/CharacterOverlay.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Subsystem/MyNetworkSubsystem.h"
 
 void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
@@ -101,15 +104,25 @@ void ABlasterPlayerController::OnRep_IsDie()
 
 void ABlasterPlayerController::OnRep_IsGameEnd()
 {
-	FString a = FString::Format(TEXT("sad : {0}"), {GetName()});
-	GEngine->AddOnScreenDebugMessage(-1,13,FColor::Orange,a);
+	// FString a = FString::Format(TEXT("sad : {0}"), {GetName()});
+	// GEngine->AddOnScreenDebugMessage(-1,13,FColor::Orange,a);
 	
 	if(IsDie == 0 && IsGameEnd == 1)
 	{
 		SetCenterText(FText::FromString("You Win!"));
+		if(HasAuthority())
+		{
+			UMyNetworkSubsystem* Sub = 	UGameplayStatics::GetGameInstance(this)->GetSubsystem<UMyNetworkSubsystem>();
+			if(Sub)
+			{
+				const APlayerState* State = GetPlayerState<APlayerState>();
+				FString PlayerName = State->GetPlayerName();
+				GetScorePacket* Packet = new GetScorePacket(0, PlayerName, 100);
+				Sub->SendPacket(Packet);
+				delete Packet;
+			}
+		}
 	}
-
-	
 }
 
 void ABlasterPlayerController::ServerSetGameEnd_Implementation()

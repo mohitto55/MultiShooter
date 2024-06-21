@@ -16,6 +16,7 @@ class MULTISHOOTER_API ABlasterGameMode : public AGameMode
 	DECLARE_MULTICAST_DELEGATE(GAME_END)
 public:
 	ABlasterGameMode();
+	void BeginPlay() override;
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
@@ -25,7 +26,11 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(Server, Reliable)
 	void ActorDie(AActor* actor);
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	UFUNCTION()
 	void GameEnd();
+	
 	GAME_END _GameEnd;
 private:
 	int LiveActors;

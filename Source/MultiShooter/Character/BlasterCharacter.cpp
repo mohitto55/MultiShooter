@@ -21,7 +21,11 @@
 #include "Player/BlasterPlayerController.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
+#include "Components/TextBlock.h"
+#include "BlasterComponents/NameWidgetComponent.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "Subsystem/MyNetworkSubsystem.h"
+
 // Sets default values
 ABlasterCharacter::ABlasterCharacter()
 {
@@ -39,6 +43,13 @@ ABlasterCharacter::ABlasterCharacter()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
+	DisplayWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DisplayWidget"));
+	if(DisplayWidgetComponent)
+	{
+		DisplayWidgetComponent->SetupAttachment(GetMesh());
+		DisplayWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		DisplayWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> ShoulderMappingRef(TEXT("/Game/Input/IMC_ShoulderPlayer.IMC_ShoulderPlayer"));
 	if(ShoulderMappingRef.Object)
 	{
@@ -85,6 +96,7 @@ ABlasterCharacter::ABlasterCharacter()
 	}
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
+	
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -96,6 +108,7 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	//DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABlasterCharacter, Health);
+	DOREPLIFETIME(ABlasterCharacter, PlayerName);
 }
 
 void ABlasterCharacter::PostInitializeComponents()
@@ -106,6 +119,8 @@ void ABlasterCharacter::PostInitializeComponents()
 		Combat->SetIsReplicated(true);
 		Combat->Character = this;
 	}
+	
+	InitDisplayText();
 }
 
 void ABlasterCharacter::PlayFireMontage(bool bAiming)
@@ -163,7 +178,6 @@ void ABlasterCharacter::BeginPlay()
 		}
 	}
 	UpdateHUDHealth();
-	GetStaemUserID();
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::ReceiveDamage);
@@ -382,45 +396,67 @@ void ABlasterCharacter::OnRep_Health()
 	PlayHitReactMontage();
 	UpdateHUDHealth();
 }
-
-
-void ABlasterCharacter::GetStaemUserID()
+void ABlasterCharacter::OnRep_PlayerName()
 {
-	// Get the OnlineSubsystem we want to work with
-	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-	if (OnlineSubsystem)
+	SetDisplayText(PlayerName);
+}
+
+int32 ABlasterCharacter::GetSteamUserID()
+{
+	if(APlayerState* State = GetPlayerState())
 	{
-		// Get the identity interface for Steam
-		IOnlineIdentityPtr IdentityInterface = OnlineSubsystem->GetIdentityInterface();
-		if (IdentityInterface.IsValid())
+		return State->GetPlayerId();
+	}
+	return 0;
+}
+
+FString ABlasterCharacter::GetSteamUserName()
+{
+	FString NULLStr = FString(TEXT("NULL"));
+	if(Controller)
+	{
+		if(const APlayerState* State = Controller->GetPlayerState<APlayerState>())
 		{
-			TSharedPtr<const FUniqueNetId> id = GetFirstSignedInUser(0);
-			int ShowTime = 10;
-			// const FString stateUnique = GetPlayerState()->GetUniqueId().ToString();
-			// GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-			// FString::Printf(TEXT("State Unique Id : %s"), *stateUnique));
-			if(GetPlayerState())
+			return State->GetPlayerName();
+		}
+	}
+	return NULLStr;
+}
+
+void ABlasterCharacter::InitDisplayText()
+{
+	if(!DisplayWidgetComponent && !TextWidget)
+		return;
+
+	if(TextWidget)
+	{
+		DisplayWidgetComponent->SetWidget(TextWidget);
+		if(UUserWidget* ComWidget = DisplayWidgetComponent->GetWidget())
+		{
+			DisplayWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+			
+			SetDisplayText(TEXT(""));
+		}
+	}
+}
+
+void ABlasterCharacter::SetDisplayText(const FString& Str)
+{
+	if(!DisplayWidgetComponent)
+		return;
+	if(UUserWidget* ComWidget = DisplayWidgetComponent->GetWidget())
+	{
+		UWidget* Widget = DisplayWidgetComponent->GetWidget()->GetWidgetFromName("TextBlock");
+		if(Widget)
+		{
+			UTextBlock* TextBlock = Cast<UTextBlock>(Widget);
+			if(TextBlock)
 			{
-				GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-				FString::Printf(TEXT("State Player ID : %d"), GetPlayerState()->GetPlayerId()));
-				GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-				FString::Printf(TEXT("State Player Name : %s"), *GetPlayerState()->GetPlayerName()));
-			}
-// 			FString NickName = IdentityInterface->GetPlayerNickname(0);
-// 			GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-// FString::Printf(TEXT("Nick Name : %s"),*NickName));
-			if(id.IsValid())
-			{
-				FString DisplayName = IdentityInterface->GetUserAccount(*id.Get())->GetDisplayName();
-				FString RealName = IdentityInterface->GetUserAccount(*id.Get())->GetRealName();
-	
-				GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-					FString::Printf(TEXT("Display Name : %s"),*DisplayName));
-				GEngine->AddOnScreenDebugMessage(-1,ShowTime, FColor::Magenta,
-	FString::Printf(TEXT("RealName Name : %s"),*RealName));
+				TextBlock->SetText(FText::FromString(Str));
 			}
 		}
 	}
+	
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -453,4 +489,20 @@ bool ABlasterCharacter::IsAiming()
 AController* ABlasterCharacter::GetBlasterController()
 {
 	return GetController(); 
+}
+
+// 클라이언트 액터는 일반적으로 컨트롤러가 없다.
+// 프로시즈바이를 통해서 서버에서 컨트롤러를 지정해준다.
+// 이 함수는 서버에서만 동작한다.
+void ABlasterCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	Controller = NewController;
+	
+	if(Controller)
+	{
+		FString Name = GetSteamUserName();
+		PlayerName = Name;
+		SetDisplayText(PlayerName);
+	}
 }

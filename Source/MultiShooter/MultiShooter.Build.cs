@@ -8,7 +8,7 @@ public class MultiShooter : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		bEnableExceptions = true;
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Niagara", "EnhancedInput", "Boost", "MultiplayerSessions", "OnlineSubsystem", "OnlineSubsystemSteam" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Niagara", "UMG", "EnhancedInput", "Boost", "MultiplayerSessions", "OnlineSubsystem", "OnlineSubsystemSteam" });
 		PublicIncludePaths.AddRange(new string[] { "MultiShooter" });
 
 		// Uncomment if you are using Slate UI

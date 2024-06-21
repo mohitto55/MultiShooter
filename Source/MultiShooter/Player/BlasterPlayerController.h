@@ -26,6 +26,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSetGameEnd();
 
+	int32 PlayerNum = -1;
 protected:
 	virtual void PostInitializeComponents() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

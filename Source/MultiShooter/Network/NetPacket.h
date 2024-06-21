@@ -36,13 +36,15 @@ protected:
 	void PutInt32IntoBuffer(char*& buf, int32 value);
 	void PutFloatIntoBuffer(char*& buf, float value);
 	void PutVectorIntoBuffer(char*& buf, FVector value);
+	void PutFStringIntoBuffer(char*& buf, FString value);
 };
 
 class GetScorePacket : public NetPacket
 {
 public:
 	int32 score;
-	GetScorePacket(uint16 PlayerID, int32 Score);
+	FString uniqueID;
+	GetScorePacket(uint16 PlayerID, FString UniqueID, int32 Score);
 private:
 	virtual char* GenerateTail(char* buf) override;
 	virtual PacketID GetPacketID() override;
